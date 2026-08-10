@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0d3b66">
+<title>BPBD Jawa Tengah | Pencegahan & Kesiapsiagaan</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar" id="sidebar">
+  <div class="brand"><img class="brand-logo" src="logo-bpbd-jateng.png" alt="Logo BPBD Jawa Tengah"><div><b>BPBD JAWA TENGAH</b><small>Bidang Pencegahan & Kesiapsiagaan</small></div></div>
+  <nav>
+    <button class="nav active" data-page="dashboard"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10.5V20h14v-9.5"/><path d="M9 20v-5h6v5"/></svg><span>Dashboard</span></button>
+    <button class="nav" data-page="destana"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4z"/><path d="M8 9h8M8 13h8M8 17h5"/></svg><span>DESTANA</span></button>
+    <button class="nav" data-page="ews"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/><circle cx="12" cy="12" r="4"/></svg><span>EWS</span></button>
+    <button class="nav" data-page="spab"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4z"/><path d="M8 9h8M8 13h5"/></svg><span>SPAB</span></button>
+    <button class="nav" data-page="lidi"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="7" r="3"/><path d="M3.5 20c.5-4 2.2-6 5.5-6s5 2 5.5 6"/><path d="M16 10l2 2 3-3"/></svg><span>Unit LIDI</span></button>
+    <button class="nav" data-page="dokumen"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l3 3v15H6z"/><path d="M15 3v4h4M9 11h6M9 15h6M9 19h4"/></svg><span>Dokumen Kebencanaan</span></button>
+    <button class="nav" data-page="peta"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s6-5.2 6-11a6 6 0 1 0-12 0c0 5.8 6 11 6 11z"/><circle cx="12" cy="10" r="2"/></svg><span>Peta Kebencanaan</span></button>
+    <button class="nav" data-page="edukasi"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M9.5 9.5 15 7.5l-2 5.5-5.5 2z"/></svg><span>Edukasi Kebencanaan</span></button>
+  </nav>
+  <div class="sidefoot">Portal data bidang<br>Versi 1.0</div>
+</aside>
+
+<main class="main">
+<header class="topbar">
+  <button class="menubtn" id="menuBtn">☰</button>
+  <div><div class="eyebrow">BPBD PROVINSI JAWA TENGAH</div><h1 id="title">Dashboard Pencegahan & Kesiapsiagaan</h1></div>
+  <div class="connection" id="connection">● Menghubungkan data...</div>
+</header>
+
+<section id="dashboard" class="page active">
+  <div class="hero"><div><span>PORTAL DATA</span><h2>Pencegahan & Kesiapsiagaan</h2>
+  <p>Satu pintu untuk memantau data DESTANA, EWS, SPAB, Unit LIDI, dokumen, peta, dan kegiatan edukasi kebencanaan.</p></div>
+  <button class="primary" data-jump="destana">Buka Data DESTANA →</button></div>
+  <div class="cards">
+    <div class="card"><label>DESTANA</label><strong id="sTotal">—</strong><small>data terdaftar</small></div>
+    <div class="card"><label>KABUPATEN/KOTA</label><strong id="sKab">—</strong><small>wilayah terdata</small></div>
+    <div class="card"><label>DESA/KELURAHAN</label><strong id="sDesa">—</strong><small>lokasi terdata</small></div>
+    <div class="card"><label>TAHUN DATA</label><strong id="sYear">—</strong><small>periode terdata</small></div>
+  </div>
+  <div class="cols">
+    <div class="panel"><h3>Sebaran DESTANA</h3><p>Jumlah data berdasarkan kabupaten/kota</p><div id="chart"></div></div>
+    <div class="panel"><h3>Peta DESTANA</h3><p>Siap menggunakan Latitude & Longitude</p><div id="map"></div></div>
+  </div>
+</section>
+
+<section id="destana" class="page">
+  <div class="intro"><div><div class="eyebrow">DATA UTAMA</div><h2>Desa Tangguh Bencana</h2><p>Data DESTANA langsung dari Google Sheets.</p></div><button class="secondary" id="refresh">↻ Muat ulang</button></div>
+
+  <div class="global-filter">
+    <div><div class="eyebrow">FILTER DASHBOARD DESTANA</div><b>Wilayah Kabupaten/Kota</b><small>Pilih kabupaten untuk menyesuaikan indikator utama.</small></div>
+    <select id="globalKab"><option value="">Jawa Tengah — Semua Kabupaten/Kota</option></select>
+  </div>
+
+  <div class="cards compact four">
+    <div class="card"><label id="dJatengLabel">JUMLAH DESA</label><strong id="dJateng">8.563</strong><small id="dJatengSub">Jawa Tengah</small></div>
+    <div class="card"><label>DESTANA TERBENTUK</label><strong id="dTerbentuk">—</strong><small id="dTerbentukSub">status pembentukan</small></div>
+    <div class="card"><label>CAPAIAN</label><strong id="dCapaian">—</strong><small id="dCapaianSub">dari 8.563 desa</small></div>
+    <div class="card"><label>TAHUN BERJALAN</label><strong id="dTahunBerjalan">—</strong><small id="dTahunBerjalanSub">pembentukan tahun berjalan</small></div>
+  </div>
+
+  <div class="cols charts2">
+    <div class="panel chartpanel"><div class="charthead"><div><h3>Sebaran DESTANA per Kabupaten/Kota</h3><p>Jumlah DESTANA dengan status Pembentukan</p></div><button class="chartlink" type="button" data-chart-all>Lihat semua</button></div><canvas id="kabChart"></canvas></div>
+    <div class="panel chartpanel"><h3>Sumber Pendanaan DESTANA</h3><p>Komposisi sumber pendanaan pada database</p><canvas id="fundChart"></canvas></div>
+  </div>
+
+  <div class="panel tablepanel">
+    <div class="filters"><input id="search" placeholder="🔎 Cari kabupaten, kecamatan, desa..."><select id="kab"><option value="">Semua Kabupaten/Kota</option></select><select id="year"><option value="">Semua Tahun</option></select><select id="status"><option value="">Semua Status</option></select></div>
+    <div class="tablewrap"><table id="table"><thead></thead><tbody></tbody></table></div>
+    <div class="foot"><span id="info">—</span><span>Sumber: <b>INPUT DATA</b></span></div>
+  </div>
+
+  <div class="panel chartpanel"><h3>Pembentukan DESTANA per Tahun</h3><p>Jumlah DESTANA dengan status <b>Pembentukan</b> berdasarkan tahun, dibedakan menurut sumber dana</p><canvas id="yearChart"></canvas></div>
+
+  <div class="panel"><div class="maphead"><div><h3>Peta DESTANA</h3><p>Lokasi berdasarkan Latitude dan Longitude pada INPUT DATA.</p></div><span id="coordInfo" class="mapinfo">—</span></div><div id="destanaMap"></div></div>
+  <div class="updatebar">Terakhir diperbarui: <b id="lastUpdated">10 Agustus 2026</b> <span>•</span> Sumber data: Google Sheets</div>
+</section>
+<section id="ews" class="page placeholder"><div><b>📡 EWS</b><p>Modul EWS siap disambungkan ke database EWS.</p></div></section>
+<section id="spab" class="page placeholder"><div><b>🏫 SPAB</b><p>Modul Satuan Pendidikan Aman Bencana.</p></div></section>
+<section id="lidi" class="page placeholder"><div><b>♿ UNIT LIDI JATENG</b><p>Modul Unit Layanan Inklusi Disabilitas Penanggulangan Bencana.</p></div></section>
+<section id="dokumen" class="page placeholder"><div><b>📚 DOKUMEN KEBENCANAAN</b><p>KRB · RPB · RPKB · RENKON.</p></div></section>
+<section id="peta" class="page placeholder"><div><b>🗺️ PETA KEBENCANAAN</b><p>Modul peta kebencanaan akan dikembangkan berikutnya.</p></div></section>
+<section id="edukasi" class="page placeholder"><div><b>🎓 EDUKASI KEBENCANAAN</b><p>Database kegiatan edukasi, sosialisasi, bimtek, simulasi, dan kegiatan lainnya.</p></div></section>
+</main></div>
+<div id="detailModal" class="modal"><div class="modalbox"><div class="modalhead"><div><div class="eyebrow">DETAIL DATA DESTANA</div><h2 id="detailTitle">Detail DESTANA</h2></div><button class="close" id="closeModal">×</button></div><div id="detailGrid" class="detailgrid"></div></div></div>
+<div id="toast"></div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><script src="app.js"></script>
+
+<div class="modal" id="kabChartModal">
+  <div class="modalbox chartmodalbox">
+    <div class="modalhead"><div><div class="eyebrow">SEBARAN DESTANA</div><h2>Seluruh Kabupaten/Kota</h2></div><button class="close" id="closeKabChart" aria-label="Tutup">×</button></div>
+    <div class="chartmodalbody"><canvas id="kabChartAll"></canvas></div>
+  </div>
+</div>
+</body></html>
