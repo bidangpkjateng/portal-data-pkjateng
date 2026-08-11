@@ -34,19 +34,29 @@ function statusIs(v, target){
 }
 
 function cols(){
+  const findKabCol = () => {
+    // Cari yang mengandung "kab" tapi TIDAK mengandung "kode"
+    const idx = H.findIndex(h => {
+      const text = n(h);
+      return (text.includes("kab/kota") || text.includes("kabupaten") || text === "kab") && !text.includes("kode");
+    });
+    if (idx >= 0) return idx;
+    return H.findIndex(h => n(h).includes("kab") && !n(h).includes("kode"));
+  };
+
   const partial = (...names) => {
     for (const x of names) {
-      const idx = H.findIndex(h => n(h).includes(n(x)));
+      const idx = H.findIndex(h => n(h).includes(n(x)) && !n(h).includes("kode"));
       if (idx >= 0) return idx;
     }
     return -1;
   };
 
   return {
-    kab: partial("kab/kota", "kabupaten", "kab"),
+    kab: findKabCol(),
     kec: partial("kecamatan", "kec"),
     desa: partial("desa/kel", "desa", "kelurahan"),
-    kode: partial("kode desa", "kode"),
+    kode: H.findIndex(h => n(h).includes("kode")),
     tahun: partial("tahun"),
     lat: partial("latitude", "lat"),
     lon: partial("longitude", "lon", "lng"),
@@ -347,7 +357,7 @@ function getColor(d) {
          d > 20 ? '#2e7d32' :
          d > 10 ? '#f57f17' :
          d > 0  ? '#e65100' :
-                  '#cccccc'; // Abu-abu terang jika 0 agar tidak merah mencolok
+                  '#cccccc';
 }
 
 function renderDestanaMap(c){
