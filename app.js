@@ -7,47 +7,58 @@ const DESA_PER_KAB={
 "PEKALONGAN":223,"PEMALANG":223,"TEGAL":287,"BREBES":297,
 "KOTA MAGELANG":17,"KOTA SURAKARTA":54,"KOTA SALATIGA":23,"KOTA SEMARANG":177,"KOTA PEKALONGAN":27,"KOTA TEGAL":27
 };
+
 function kabKey(v){
  return n(v).replace(/^kabupaten\s+/,"").replace(/^kab\.\s*/,"").replace(/^kota\s+/,"kota ").trim().toUpperCase();
 }
+
 const EXPECTED_HEADERS=["Kab/Kota","Kecamatan","Desa/Kel","Kode Kab/Kota","Kode Kecamatan","Kode Desa/Kel","Latitude","Longitude","Bulan","Tahun","Ancaman","Sumber Dana","Keterangan","PEMBENTUKAN/PENGUATAN","Ketua Forum PRB","Nomor HP","DOKUMEN","Kelas","SKOR","PKD","Kajian Risiko Bencana + Peta","RPB","FRB","PFRB","Pembentukan Tim Relawan Desa","Sistem Peringatan Dini","Rencana Evakuasi + Peta","Rencana Kontingensi","Simulasi/Gladi Lapangan","Rencana Pemulihan"];
 let H=[],R=[],map=null,geojsonLayer=null,kabChart=null,fundChart=null,yearChart=null,globalKab="";
 let currentSortMode = "highest";
 
-// ==========================================
-// PENGATURAN PAGINASI TABEL (10 BARIS)
-// ==========================================
 let currentPage = 1;
 const rowsPerPage = 10;
 
 const $=x=>document.getElementById(x), n=x=>String(x??"").trim().toLowerCase();
 
-// Fungsi Pindah Halaman untuk Tombol HTML
 window.changePage = function(direction) {
   currentPage += direction;
   table(cols());
 };
 
-function cols(){
- const exact=(...names)=>{for(const x of names){const i=H.findIndex(h=>n(h)===n(x));if(i>=0)return i}return -1};
- const partial=(...names)=>{for(const x of names){const i=H.findIndex(h=>n(x).includes(n(x)));if(i>=0)return i}return -1};
- const byExpected=(i,found)=>found>=0?found:(i<H.length?i:-1);
- return{
-  kab:byExpected(0,exact("Kab/Kota","Kabupaten/Kota","Kab Kota","Kabupaten")),
-  kec:byExpected(1,exact("Kecamatan")),
-  desa:byExpected(2,exact("Desa/Kel","Desa/Kelurahan","Desa/Kel.")),
-  kode:byExpected(5,exact("Kode Desa/Kel","Kode Desa/Kelurahan")),
-  tahun:byExpected(9,exact("Tahun")),
-  lat:byExpected(6,exact("Latitude")),
-  lon:byExpected(7,exact("Longitude")),
-  ancaman:byExpected(10,exact("Ancaman")),
-  sumber:byExpected(11,exact("Sumber Dana","Sumber Pendanaan","Sumber Pendanaan Desa")),
-  status:byExpected(13,partial("PEMBENTUKAN / PENGUATAN","PEMBENTUKAN/PENGUATAN","PEMBENTUKAN","PENGUATAN"))
- };
+function statusIs(v, target){
+  if(!v) return false;
+  const cleanV = n(v).replace(/[^a-z0-9]/g, "");
+  const cleanTarget = n(target).replace(/[^a-z0-9]/g, "");
+  return cleanV.includes(cleanTarget);
 }
+
+function cols(){
+  const partial = (...names) => {
+    for (const x of names) {
+      const idx = H.findIndex(h => n(h).includes(n(x)));
+      if (idx >= 0) return idx;
+    }
+    return -1;
+  };
+
+  return {
+    kab: partial("kab/kota", "kabupaten", "kab"),
+    kec: partial("kecamatan", "kec"),
+    desa: partial("desa/kel", "desa", "kelurahan"),
+    kode: partial("kode desa", "kode"),
+    tahun: partial("tahun"),
+    lat: partial("latitude", "lat"),
+    lon: partial("longitude", "lon", "lng"),
+    ancaman: partial("ancaman"),
+    sumber: partial("sumber dana", "sumber pendanaan", "sumber"),
+    status: partial("pembentukan/penguatan", "pembentukan", "penguatan", "status")
+  };
+}
+
 function fmt(x){return Number(x||0).toLocaleString("id-ID")}
 function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
-function statusIs(v,target){return n(v)===n(target)}
+
 function validValue(v){
  const x=String(v??"").trim();
  if(!x)return false;
@@ -149,7 +160,7 @@ function initGlobalFilterDropdown(c){
 function renderCards(c){
  const selected=globalKab;
  const rows=selected&&c.kab>=0?R.filter(r=>n(r[c.kab])===n(selected)):R;
- const formed=c.status>=0?rows.filter(r=>statusIs(r[c.status],"PEMBENTUKAN")).length:0;
+ const formed=c.status>=0?rows.filter(r=>statusIs(r[c.status],"PEMBENTUKAN")).length:rows.length;
  const currentYear=new Date().getFullYear();
  const currentYearFormed=c.status>=0&&c.tahun>=0
    ?rows.filter(r=>statusIs(r[c.status],"PEMBENTUKAN")&&String(r[c.tahun]??"").trim()===String(currentYear)).length:0;
@@ -189,9 +200,6 @@ function filters(c){
  if(s) s.onchange=()=>{ currentPage=1; table(c); };
 }
 
-// ==========================================
-// FUNGSI TABEL + LOGIKA PAGINASI 10 BARIS
-// ==========================================
 function table(c=cols()){
  if(!$("table")) return;
 
@@ -200,13 +208,11 @@ function table(c=cols()){
  let yf=n($("year")?.value || "");
  let sf=n($("status")?.value || "");
 
- // 1. Filter Data Berdasarkan Pencarian & Opsi Select
  let filteredData = R.map((r,i)=>({r,i})).filter(o=>{
    let r=o.r;
    return(!q||r.join(" ").toLowerCase().includes(q))&&(!kf||n(r[c.kab])===kf)&&(!yf||n(r[c.tahun])===yf)&&(!sf||n(r[c.status])===sf);
  });
 
- // 2. Perhitungan Halaman (10 Baris)
  const totalRows = filteredData.length;
  const totalPages = Math.ceil(totalRows / rowsPerPage) || 1;
 
@@ -217,7 +223,6 @@ function table(c=cols()){
  const endIndex = Math.min(startIndex + rowsPerPage, totalRows);
  const paginatedData = filteredData.slice(startIndex, endIndex);
 
- // 3. Render Header dan Baris Tabel
  const v=[c.kab,c.kec,c.desa,c.tahun,c.ancaman,c.sumber,c.status];
  const labels=["Kabupaten/Kota","Kecamatan","Desa/Kel","Tahun","Ancaman","Sumber Dana","Pembentukan / Penguatan"];
  
@@ -225,7 +230,6 @@ function table(c=cols()){
  $("table").querySelector("tbody").innerHTML=paginatedData.map(o=>"<tr class='clickrow' data-row='"+o.i+"'>"+v.map(i=>`<td>${esc(i>=0?o.r[i]:"")}</td>`).join("")+"</tr>").join("");
  $("table").querySelectorAll("tbody tr").forEach(tr=>tr.onclick=()=>showDetail(+tr.dataset.row));
 
- // 4. Update Status Teks & Kondisi Tombol
  if($("info")) {
    $("info").textContent = totalRows > 0 
      ? `Menampilkan ${fmt(startIndex + 1)} - ${fmt(endIndex)} dari ${fmt(totalRows)} data` 
@@ -237,7 +241,6 @@ function table(c=cols()){
  if($("nextBtn")) $("nextBtn").disabled = (currentPage >= totalPages);
 }
 
-// Plugin Doughnut Chart
 const doughnutLabelsPlugin = {
   id: 'doughnutLabels',
   afterDatasetsDraw(chart) {
@@ -270,7 +273,6 @@ const doughnutLabelsPlugin = {
   }
 };
 
-// Plugin Label Atas Bar Chart
 const barTopLabelsPlugin = {
   id: 'barTopLabels',
   afterDatasetsDraw(chart) {
@@ -300,7 +302,7 @@ function renderCharts(c){
    : R;
 
  if($("kabChart")){
-   const kabData=Object.entries(countByData(R, c.kab, r=>c.status>=0&&statusIs(r[c.status],"PEMBENTUKAN"))).sort((a,b)=>b[1]-a[1]);
+   const kabData=Object.entries(countByData(R, c.kab, r=>c.status<0 || statusIs(r[c.status],"PEMBENTUKAN"))).sort((a,b)=>b[1]-a[1]);
    if(kabChart)kabChart.destroy();
    kabChart=new Chart($("kabChart"),{type:"bar",data:{labels:kabData.map(x=>x[0]),datasets:[{label:"Jumlah DESTANA",data:kabData.map(x=>x[1]),backgroundColor:"#56CCF2"}]},options:{indexAxis:"y",responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,ticks:{precision:0}},y:{ticks:{font:{size:9}}}}}});
  }
@@ -323,11 +325,11 @@ function renderCharts(c){
  if($("yearChart")){
    const yearly={}; const fundNames=[];
    activeRows.forEach(r=>{
-     if(c.status<0||c.tahun<0||!statusIs(r[c.status],"PEMBENTUKAN"))return;
+     if(c.tahun<0) return;
+     if(c.status>=0 && !statusIs(r[c.status],"PEMBENTUKAN")) return;
      const y=String(r[c.tahun]??"").trim();
      if(!/^\d{4}$/.test(y))return;
-     const f=String(r[c.sumber]??"").trim();
-     if(!validValue(f))return;
+     const f=String(r[c.sumber]??"").trim() || "Lainnya";
      if(!yearly[y])yearly[y]={};
      yearly[y][f]=(yearly[y][f]||0)+1;
      if(!fundNames.includes(f))fundNames.push(f);
@@ -340,15 +342,12 @@ function renderCharts(c){
  }
 }
 
-// ==========================================
-// FUNGSI CHOROPLETH MAP (PETA KEPADATAN)
-// ==========================================
 function getColor(d) {
-  return d > 30 ? '#1b5e20' :  // Hijau Tua (Sangat Tinggi)
-         d > 20 ? '#2e7d32' :  // Hijau (Tinggi)
-         d > 10 ? '#f57f17' :  // Kuning/Oranye (Sedang)
-         d > 0  ? '#e65100' :  // Oranye Tua (Rendah)
-                  '#b71c1c';   // Merah (Sangat Rendah / Belum Ada)
+  return d > 30 ? '#1b5e20' :
+         d > 20 ? '#2e7d32' :
+         d > 10 ? '#f57f17' :
+         d > 0  ? '#e65100' :
+                  '#b71c1c';
 }
 
 function renderDestanaMap(c){
@@ -359,7 +358,6 @@ function renderDestanaMap(c){
    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:"© OpenStreetMap contributors"}).addTo(map);
  }
 
- // Hitung jumlah DESTANA per Kabupaten
  const destanaPerKab = {};
  if (c.kab >= 0) {
    R.forEach(r => {
@@ -420,9 +418,6 @@ function renderDestanaMap(c){
      if ($("coordInfo")) $("coordInfo").textContent = "Peta Kepadatan Wilayah (Choropleth)";
    })
    .catch(err => {
-     console.warn("Gagal memuat GeoJSON, fallback ke penanda titik:", err);
-     
-     // Fallback ke marker biasa jika file GeoJSON belum diunggah
      const pts=[];
      if(c.lat>=0&&c.lon>=0){
        R.forEach(r=>{
@@ -451,9 +446,8 @@ function showKabChartAll(){
  
  setTimeout(()=>{
    const c=cols();
-   let data=Object.entries(countByData(R, c.kab, r=>c.status>=0&&statusIs(r[c.status],"PEMBENTUKAN")));
+   let data=Object.entries(countByData(R, c.kab, r=>c.status<0 || statusIs(r[c.status],"PEMBENTUKAN")));
    
-   // LOGIKA PENGURUTAN GRAFIK BERDASARKAN SELEKSI DROPDOWN
    if(currentSortMode === "alphabet"){
      data.sort((a,b)=>a[0].localeCompare(b[0], "id"));
    } else if(currentSortMode === "alphabet-desc") {
@@ -508,7 +502,6 @@ function changeSortMode(mode){
   showKabChartAll();
 }
 
-// EVENT LISTENER DROPDOWN SORTING MODAL
 if($("sortKabChartAll")){
   $("sortKabChartAll").onchange = function(e){
     changeSortMode(e.target.value);
