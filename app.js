@@ -347,7 +347,7 @@ function getColor(d) {
          d > 20 ? '#2e7d32' :
          d > 10 ? '#f57f17' :
          d > 0  ? '#e65100' :
-                  '#b71c1c';
+                  '#cccccc'; // Abu-abu terang jika 0 agar tidak merah mencolok
 }
 
 function renderDestanaMap(c){
@@ -377,7 +377,7 @@ function renderDestanaMap(c){
 
      geojsonLayer = L.geoJSON(geojsonData, {
        style: function (feature) {
-         const namaKab = feature.properties.WADMKK || feature.properties.nama_kabupaten || "";
+         const namaKab = feature.properties.WADMKK || feature.properties.nama_kabupaten || feature.properties.NAME_2 || "";
          const count = destanaPerKab[kabKey(namaKab)] || 0;
 
          return {
@@ -389,7 +389,7 @@ function renderDestanaMap(c){
          };
        },
        onEachFeature: function (feature, layer) {
-         const namaKab = feature.properties.WADMKK || feature.properties.nama_kabupaten || "";
+         const namaKab = feature.properties.WADMKK || feature.properties.nama_kabupaten || feature.properties.NAME_2 || "";
          const count = destanaPerKab[kabKey(namaKab)] || 0;
 
          layer.bindTooltip(
