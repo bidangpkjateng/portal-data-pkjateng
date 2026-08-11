@@ -34,35 +34,27 @@ function statusIs(v, target){
 }
 
 function cols(){
-  const findKabCol = () => {
-    // Cari yang mengandung "kab" tapi TIDAK mengandung "kode"
-    const idx = H.findIndex(h => {
-      const text = n(h);
-      return (text.includes("kab/kota") || text.includes("kabupaten") || text === "kab") && !text.includes("kode");
-    });
-    if (idx >= 0) return idx;
-    return H.findIndex(h => n(h).includes("kab") && !n(h).includes("kode"));
-  };
-
-  const partial = (...names) => {
-    for (const x of names) {
-      const idx = H.findIndex(h => n(h).includes(n(x)) && !n(h).includes("kode"));
-      if (idx >= 0) return idx;
+  // Cari berdasarkan nama header, jika gagal gunakan urutan indeks standar (fallback)
+  const findIdx = (keywords, defaultIdx) => {
+    for(let kw of keywords){
+      const idx = H.findIndex(h => n(h).includes(kw) && !n(h).includes("kode"));
+      if(idx >= 0) return idx;
     }
-    return -1;
+    // Jika tidak ketemu via teks, cek fallback index jika valid
+    return (H[defaultIdx] !== undefined) ? defaultIdx : -1;
   };
 
   return {
-    kab: findKabCol(),
-    kec: partial("kecamatan", "kec"),
-    desa: partial("desa/kel", "desa", "kelurahan"),
+    kab: findIdx(["kab/kota", "kabupaten", "kab"], 0),
+    kec: findIdx(["kecamatan", "kec"], 1),
+    desa: findIdx(["desa/kel", "desa", "kelurahan"], 2),
     kode: H.findIndex(h => n(h).includes("kode")),
-    tahun: partial("tahun"),
-    lat: partial("latitude", "lat"),
-    lon: partial("longitude", "lon", "lng"),
-    ancaman: partial("ancaman"),
-    sumber: partial("sumber dana", "sumber pendanaan", "sumber"),
-    status: partial("pembentukan/penguatan", "pembentukan", "penguatan", "status")
+    lat: findIdx(["latitude", "lat"], 6),
+    lon: findIdx(["longitude", "lon", "lng"], 7),
+    tahun: findIdx(["tahun"], 9),
+    ancaman: findIdx(["ancaman"], 10),
+    sumber: findIdx(["sumber dana", "sumber pendanaan", "sumber"], 11),
+    status: findIdx(["pembentukan/penguatan", "pembentukan", "penguatan", "status"], 13)
   };
 }
 
