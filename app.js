@@ -14,7 +14,6 @@ function kabKey(v){
 
 const EXPECTED_HEADERS=["Kab/Kota","Kecamatan","Desa/Kel","Kode Kab/Kota","Kode Kecamatan","Kode Desa/Kel","Latitude","Longitude","Bulan","Tahun","Ancaman","Sumber Dana","Keterangan","PEMBENTUKAN/PENGUATAN","Ketua Forum PRB","Nomor HP","DOKUMEN","Kelas","SKOR","PKD","Kajian Risiko Bencana + Peta","RPB","FRB","PFRB","Pembentukan Tim Relawan Desa","Sistem Peringatan Dini","Rencana Evakuasi + Peta","Rencana Kontingensi","Simulasi/Gladi Lapangan","Rencana Pemulihan"];
 let H=[],R=[],map=null,geojsonLayer=null,kabChart=null,fundChart=null,yearChart=null,globalKab="";
-let currentSortMode = "highest";
 
 let currentPage = 1;
 const rowsPerPage = 10;
@@ -34,13 +33,11 @@ function statusIs(v, target){
 }
 
 function cols(){
-  // Cari berdasarkan nama header, jika gagal gunakan urutan indeks standar (fallback)
   const findIdx = (keywords, defaultIdx) => {
     for(let kw of keywords){
       const idx = H.findIndex(h => n(h).includes(kw) && !n(h).includes("kode"));
       if(idx >= 0) return idx;
     }
-    // Jika tidak ketemu via teks, cek fallback index jika valid
     return (H[defaultIdx] !== undefined) ? defaultIdx : -1;
   };
 
@@ -450,11 +447,13 @@ function showKabChartAll(){
    const c=cols();
    let data=Object.entries(countByData(R, c.kab, r=>c.status<0 || statusIs(r[c.status],"PEMBENTUKAN")));
    
-   if(currentSortMode === "alphabet"){
+   const sortVal = $("sortKabChartAll")?.value || "highest";
+
+   if(sortVal === "alphabet"){
      data.sort((a,b)=>a[0].localeCompare(b[0], "id"));
-   } else if(currentSortMode === "alphabet-desc") {
+   } else if(sortVal === "alphabet-desc") {
      data.sort((a,b)=>b[0].localeCompare(a[0], "id"));
-   } else if(currentSortMode === "lowest") {
+   } else if(sortVal === "lowest") {
      data.sort((a,b)=>a[1]-b[1]);
    } else {
      data.sort((a,b)=>b[1]-a[1]);
@@ -498,15 +497,9 @@ function showKabChartAll(){
  },50);
 }
 
-function changeSortMode(mode){
-  currentSortMode = mode;
-  if($("sortKabChartAll")) $("sortKabChartAll").value = mode;
-  showKabChartAll();
-}
-
 if($("sortKabChartAll")){
-  $("sortKabChartAll").onchange = function(e){
-    changeSortMode(e.target.value);
+  $("sortKabChartAll").onchange = function(){
+    showKabChartAll();
   };
 }
 
